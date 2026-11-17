@@ -1,0 +1,21 @@
+
+{
+  "current_session_id": "sess_default",
+  "rules": {
+    "rule_001": {
+      "hit_count": 0,
+      "session_hits": [],
+      "last_triggered": null
+    },
+    "rule_002": {
+      "hit_count": 0,
+      "session_hits": [],
+      "last_triggered": null
+    },
+    "rule_003": {
+      "hit_count": 0,
+      "session_hits": [],
+      "last_triggered": null
+    }
+  }
+}
