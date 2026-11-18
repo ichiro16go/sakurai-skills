@@ -25,14 +25,16 @@
 
 ```text
 sakurai-skills/
-├── CLAUDE.md                     # Claude Code 運用ガイドライン（コア原則・自律成長ルール）
-├── rules.jsonl                   # ルール蓄積ファイル（1行1件のJSON Lines）
-├── rule_metrics.json             # 適用回数・セッションヒット数の計測データ
+├── .claude-plugin/
+│   ├── plugin.json               # プラグイン定義
+│   └── marketplace.json          # この repo 自体を marketplace として配布するための定義
 ├── hooks/
+│   ├── hooks.json                # フック登録（UserPromptSubmit / PreToolUse）
 │   ├── user_prompt_submit.sh     # プロンプト評価・ルール注入・計測フック
-│   └── pre_tool_use.sh           # 破壊的操作・機密ファイル保護フック
+│   └── pre_tool_use.sh           # 破壊的操作・機密ファイル保護フック（exit 2 でブロック）
 ├── skills/
-│   └── record_rule.md            # 振り返り・ルール追加用スキル
+│   └── record-rule/SKILL.md      # 振り返り・ルール追加用スキル
+├── rules.jsonl                   # 同梱ルール（1行1件のJSON Lines）
 ├── references/                   # 桜井政博のエッセンス明文化（NotebookLM 解析結果・カテゴリ A〜M）
 │   ├── work_stance.md            # A 仕事の姿勢
 │   ├── game-essence.md           # B ゲーム性
@@ -47,8 +49,16 @@ sakurai-skills/
 │   ├── programming.md            # K プログラム・テクニカル
 │   ├── pr_marketing.md           # L 広報
 │   └── grab_bag.md               # M 雑談・クリエイターの流儀
+├── CLAUDE.md                     # 運用ガイドライン（リポジトリ開発用。プラグインとしては配布されない）
 └── README.md
 ```
+
+実行時データは `${CLAUDE_PLUGIN_DATA}`（プラグイン更新で消えない場所）に置きます。
+
+| ファイル | 内容 |
+|---|---|
+| `rules.local.jsonl` | `record-rule` で追記した自分用ルール（同梱 `rules.jsonl` と合わせて注入対象） |
+| `rule_metrics.json` | ルールごとの発火回数・セッションヒット数 |
 
 ### references/ について
 
@@ -58,45 +68,43 @@ sakurai-skills/
 
 > 現状 A（仕事の姿勢）は reference のみで、対応する rule は未作成です。
 
-> 旧構成（`.claude/` 配下に全て配置）から、リポジトリ直下にフラット化しました。フックは自身の親ディレクトリ（`hooks/..`）を基準に `rules.jsonl` / `rule_metrics.json` を参照します。
 
 ---
 
 ## 3\. セットアップ手順
 
-### ステップ 1: パッケージの配置
-
-このリポジトリを clone し、`CLAUDE.md` / `rules.jsonl` / `rule_metrics.json` / `hooks/` / `skills/` を対象プロジェクトのルートに配置します。
-Claude Code から使う場合は、`settings.json` の hooks に `hooks/*.sh` のパスを登録してください。
-
-### ステップ 2: 実行権限の付与
-
-フックスクリプトを実行可能にします（macOS / Linux / WSL 環境）。
+### ステップ 1: プラグインのインストール
 
 ```
-chmod +x hooks/*.sh
-
+/plugin marketplace add https://github.com/ichiro16go/sakurai-skills
+/plugin install sakurai-skills@sakurai-skills
 ```
 
-### ステップ 3: 動作確認（テスト）
-
-1. **注入テスト**: 入力プロンプトがトリガー（例:「ジャンプ」）に反応してルールが標準出力に注入されるか確認します。
+ローカル開発中は、リポジトリ直下を指定して試せます。
 
 ```
-echo '{"prompt": "ジャンプ処理を作って"}' | hooks/user_prompt_submit.sh
+claude --plugin-dir /path/to/sakurai-skills
+```
 
+hooks は `hooks/hooks.json` 経由で自動登録されるため、`settings.json` の編集は不要です。
+
+### ステップ 2: 動作確認（テスト）
+
+1. **注入テスト**: トリガー（例:「ジャンプ」）に反応してルールが標準出力に注入されるか確認します。
+
+```
+echo '{"prompt": "ジャンプ処理を作って"}' | CLAUDE_PLUGIN_ROOT=$PWD CLAUDE_PLUGIN_DATA=/tmp/sakurai-data hooks/user_prompt_submit.sh
 ```
 
 *→* *[自律成長ルール注入]* *というヘッダーと該当 directive が出力されれば成功です。*
 
-1. **安全ガードテスト**: 破壊的コマンドが正しく阻止されるか確認します。
+2. **安全ガードテスト**: 破壊的コマンドが正しく阻止されるか確認します。
 
 ```
-echo '{"tool_input": {"command": "rm -rf /"}}' | hooks/pre_tool_use.sh
-
+echo '{"tool_input": {"command": "rm -rf /"}}' | hooks/pre_tool_use.sh; echo $?
 ```
 
-*→* *[BLOCKED]* *と表示され、終了ステータス* *1* *で止まれば安全ガードが有効です。*
+*→* *[BLOCKED]* *と表示され、終了ステータス* *2* *（ツール実行ブロック）になれば安全ガードが有効です。*
 
 ---
 
@@ -104,7 +112,7 @@ echo '{"tool_input": {"command": "rm -rf /"}}' | hooks/pre_tool_use.sh
 
 ### ① 作業中の自動注入（何もしなくてOK）
 
-ユーザーがプロンプトを入力すると、`user_prompt_submit.sh` が裏でキーワード（`trigger`）を走査します。 合致したルールがあれば、AI の回答生成前に指示が自動注入され、`rule_metrics.json` にヒット実績が記録されます。
+ユーザーがプロンプトを入力すると、`user_prompt_submit.sh` が裏でキーワード（`trigger`）を走査します。 合致したルールがあれば、AI の回答生成前に指示が自動注入され、`${CLAUDE_PLUGIN_DATA}/rule_metrics.json` にヒット実績が記録されます。
 
 ### ② ターンの終了・区切りでの「記録」
 
@@ -119,7 +127,7 @@ Claude は会話から以下の形式で 1行ルール案 を作成して提示�
 
 ```
 
-ユーザーが「OK」または「y」と返答すると、`rules.jsonl` に追記されます。
+ユーザーが「OK」または「y」と返答すると、`${CLAUDE_PLUGIN_DATA}/rules.local.jsonl` に追記されます（同梱 `rules.jsonl` はプラグイン更新で上書きされるため）。
 ルール化の際は `references/` の該当カテゴリを根拠として確認し、directive 末尾に `（桜井哲学：<カテゴリ>）` を付けます。
 
 ---
@@ -134,7 +142,7 @@ Claude は会話から以下の形式で 1行ルール案 を作成して提示�
 
 ## 6\. ルールの昇格・メンテナンス（複数セッション計測）
 
-`rule_metrics.json` には、ルールごとの活用セッション履歴が蓄積されます。
+`${CLAUDE_PLUGIN_DATA}/rule_metrics.json` には、ルールごとの活用セッション履歴が蓄積されます。
 
 ```
 "rule_001": {
@@ -146,5 +154,5 @@ Claude は会話から以下の形式で 1行ルール案 を作成して提示�
 ```
 
 * **チーム昇格の目安**: `session_hits` が **3セッション以上** に達したルールは「普遍的に役立つ教訓」として認定し、チーム共通のプロンプトやコーディング規約へ昇格提案を行います。
-* **定期的な棚卸し（淘汰）**: 長期間発火していないルールや、状況が変わって不要になったルールは `status: "archived"` に変更するか、`rules.jsonl` から削除してコンテキストの鮮度を維持します。
+* **定期的な棚卸し（淘汰）**: 長期間発火していないルールや、状況が変わって不要になったルールは `status: "archived"` に変更するか、該当 jsonl から削除してコンテキストの鮮度を維持します。
 

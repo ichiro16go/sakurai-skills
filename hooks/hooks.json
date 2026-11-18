@@ -1,0 +1,28 @@
+{
+  "description": "sakurai-skills: prompt に当たる rule の注入と計測 / 破壊的操作・機密情報のガード",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/user_prompt_submit.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/pre_tool_use.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

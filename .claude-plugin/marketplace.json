@@ -1,0 +1,15 @@
+{
+  "name": "sakurai-skills",
+  "metadata": {
+    "description": "桜井哲学 × Claude Code Instinct。ローカル完結の自律成長型ルール注入プラグイン。"
+  },
+  "owner": { "name": "sakurai-skills" },
+  "plugins": [
+    {
+      "name": "sakurai-skills",
+      "source": "./",
+      "description": "桜井政博のエッセンスを rule 化して prompt に自動注入する。PreToolUse の安全ガードと record-rule skill 付き。",
+      "version": "0.1.0"
+    }
+  ]
+}

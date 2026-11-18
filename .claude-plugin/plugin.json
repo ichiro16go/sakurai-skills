@@ -1,0 +1,5 @@
+{
+  "name": "sakurai-skills",
+  "description": "桜井政博のゲーム制作哲学（references/）を rule 化し、prompt に当たる rule だけを自動注入する自律成長型ルールシステム。破壊的操作・機密情報の PreToolUse ガードと、学びを記録する record-rule skill を同梱。",
+  "version": "0.1.0"
+}

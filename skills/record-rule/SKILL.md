@@ -1,3 +1,8 @@
+---
+name: record-rule
+description: INVOKE WHEN ユーザーが「今の作業の学びを記録して」「ルール化して」「/record-rule」と言ったとき、または作業が一段落して再利用できるトレードオフ判断が出たとき。会話から1行ルール案を作り、承認後に rules.local.jsonl へ追記する。
+---
+
 # Skill: record-rule（自律成長ルールの抽出・記録）
 
 ## 桜井政博のゲーム作り哲学に基づく品質基準
@@ -12,4 +17,4 @@
 ## 実行フロー
 1. 学びの候補を（`references/` の該当カテゴリを確認のうえ） 1行 JSON (`{"id": "...", "trigger": [...], "directive": "...", "scope": "...", "status": "active"}`) として生成。
 2. ユーザーへワンクリック確認（`y` で承認）。
-3. `rules.jsonl` に追記し、`rule_metrics.json` に ID を初期登録。
+3. `${CLAUDE_PLUGIN_DATA}/rules.local.jsonl` に追記する（同梱の `rules.jsonl` はプラグイン更新で上書きされるため触らない）。計測は hook が `rule_metrics.json` に自動で作るので初期登録は不要。ID は `local_NNN` 形式で、同梱 rule と衝突させない。
