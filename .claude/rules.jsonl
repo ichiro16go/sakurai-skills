@@ -1,6 +1,0 @@
-```
-{"id": "rule_001", "trigger": ["ジャンプ", "jump", "物理挙動"], "directive": "ジャンプ実装時は初速の上昇と落下加速度にメリハリをつけ、操作レスポンスと快感を最優先すること（桜井哲学：手触りの追求）", "scope": "game_dev", "created_at": "2026-11-17", "status": "active"}
-{"id": "rule_002", "trigger": ["仕様", "設計", "仕様書"], "directive": "仕様は「骨（プログラム構造）」と「筋肉（パラメータ）」を分離し、後から数値を直接いじれる余白を残すこと", "scope": "game_dev", "created_at": "2026-11-17", "status": "active"}
-{"id": "rule_003", "trigger": ["削除", "delete", "rm", "リセット"], "directive": "破壊的操作を実行する前に、対象ファイル一覧をDry-runまたは個別確認すること", "scope": "software", "created_at": "2026-11-17", "status": "active"}
-
-```

@@ -24,19 +24,41 @@
 ## 2. ディレクトリ構成
 
 ```text
-your-project/
-├── .claude/
-│   ├── rules.jsonl               # ルール蓄積ファイル（1行1件のJSON Lines）
-│   ├── rule_metrics.json         # 適用回数・セッションヒット数の計測データ
-│   ├── CLAUDE.md                 # Claude Code 全体指示書
-│   ├── hooks/
-│   │   ├── user_prompt_submit.sh # プロンプト評価・ルール注入・計測フック
-│   │   └── pre_tool_use.sh       # 破壊的操作・機密ファイル保護フック
-│   └── skills/
-│       └── record_rule.md        # 振り返り・ルール追加用スキル
+sakurai-skills/
+├── CLAUDE.md                     # Claude Code 運用ガイドライン（コア原則・自律成長ルール）
+├── rules.jsonl                   # ルール蓄積ファイル（1行1件のJSON Lines）
+├── rule_metrics.json             # 適用回数・セッションヒット数の計測データ
+├── hooks/
+│   ├── user_prompt_submit.sh     # プロンプト評価・ルール注入・計測フック
+│   └── pre_tool_use.sh           # 破壊的操作・機密ファイル保護フック
+├── skills/
+│   └── record_rule.md            # 振り返り・ルール追加用スキル
+├── references/                   # 桜井政博のエッセンス明文化（NotebookLM 解析結果・カテゴリ A〜M）
+│   ├── work_stance.md            # A 仕事の姿勢
+│   ├── game-essence.md           # B ゲーム性
+│   ├── planning-design.md        # C 企画・ゲーム設計
+│   ├── specifications.md         # D 仕様
+│   ├── team_management.md        # E チーム運営
+│   ├── graphics.md               # F グラフィック
+│   ├── motion.md                 # G モーション
+│   ├── effects.md                # H エフェクト
+│   ├── sound.md                  # I サウンド
+│   ├── ui.md                     # J UI
+│   ├── programming.md            # K プログラム・テクニカル
+│   ├── pr_marketing.md           # L 広報
+│   └── grab_bag.md               # M 雑談・クリエイターの流儀
 └── README.md
-
 ```
+
+### references/ について
+
+`references/` は、NotebookLM で桜井政博の発言・著作等を解析して得たエッセンスをカテゴリ別（A〜M）に明文化した一次資料です。
+`rules.jsonl` のルール（`rule_004`〜`rule_021`）はここから「トレードオフのある判断」だけを1〜2文に圧縮したもので、各 directive 末尾の `（桜井哲学：B ゲーム性）` 等がカテゴリを指します。
+詳細な根拠・背景を確認したいときは、該当カテゴリのファイルを参照してください。
+
+> 現状 A（仕事の姿勢）は reference のみで、対応する rule は未作成です。
+
+> 旧構成（`.claude/` 配下に全て配置）から、リポジトリ直下にフラット化しました。フックは自身の親ディレクトリ（`hooks/..`）を基準に `rules.jsonl` / `rule_metrics.json` を参照します。
 
 ---
 
@@ -44,21 +66,15 @@ your-project/
 
 ### ステップ 1: パッケージの配置
 
-配布された `claude-self-growth-rules.zip` を展開し、対象プロジェクトのルート（または全プロジェクト共通で使いたい場合は `~/.claude/`）に配置します。
-
-```
-# プロジェクトルートで展開する場合
-unzip claude-self-growth-rules.zip
-mv claude_growth_rules .claude
-
-```
+このリポジトリを clone し、`CLAUDE.md` / `rules.jsonl` / `rule_metrics.json` / `hooks/` / `skills/` を対象プロジェクトのルートに配置します。
+Claude Code から使う場合は、`settings.json` の hooks に `hooks/*.sh` のパスを登録してください。
 
 ### ステップ 2: 実行権限の付与
 
 フックスクリプトを実行可能にします（macOS / Linux / WSL 環境）。
 
 ```
-chmod +x .claude/hooks/*.sh
+chmod +x hooks/*.sh
 
 ```
 
@@ -67,7 +83,7 @@ chmod +x .claude/hooks/*.sh
 1. **注入テスト**: 入力プロンプトがトリガー（例:「ジャンプ」）に反応してルールが標準出力に注入されるか確認します。
 
 ```
-echo '{"prompt": "ジャンプ処理を作って"}' | .claude/hooks/user_prompt_submit.sh
+echo '{"prompt": "ジャンプ処理を作って"}' | hooks/user_prompt_submit.sh
 
 ```
 
@@ -76,7 +92,7 @@ echo '{"prompt": "ジャンプ処理を作って"}' | .claude/hooks/user_prompt_
 1. **安全ガードテスト**: 破壊的コマンドが正しく阻止されるか確認します。
 
 ```
-echo '{"tool_input": {"command": "rm -rf /"}}' | .claude/hooks/pre_tool_use.sh
+echo '{"tool_input": {"command": "rm -rf /"}}' | hooks/pre_tool_use.sh
 
 ```
 
@@ -103,7 +119,8 @@ Claude は会話から以下の形式で 1行ルール案 を作成して提示�
 
 ```
 
-ユーザーが「OK」または「y」と返答すると、`.claude/rules.jsonl` に追記されます。
+ユーザーが「OK」または「y」と返答すると、`rules.jsonl` に追記されます。
+ルール化の際は `references/` の該当カテゴリを根拠として確認し、directive 末尾に `（桜井哲学：<カテゴリ>）` を付けます。
 
 ---
 
@@ -117,7 +134,7 @@ Claude は会話から以下の形式で 1行ルール案 を作成して提示�
 
 ## 6\. ルールの昇格・メンテナンス（複数セッション計測）
 
-`.claude/rule_metrics.json` には、ルールごとの活用セッション履歴が蓄積されます。
+`rule_metrics.json` には、ルールごとの活用セッション履歴が蓄積されます。
 
 ```
 "rule_001": {

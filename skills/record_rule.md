@@ -5,7 +5,11 @@
 2. **贅肉の削ぎ落とし**: directive は1〜2文で短く、かつ具体的であること（遅さは罪・コンテキスト浪費を防ぐ）。
 3. **機密・個人情報の完全排除**: 内部ドメイン、IP、個人名、キー情報は含めない。
 
+## 根拠資料
+- `references/` に桜井哲学のカテゴリ別資料（A 仕事の姿勢 / B ゲーム性 / C 企画 / D 仕様 / E チーム運営 / F グラフィック / G モーション / H エフェクト / I サウンド / J UI / K プログラム / L 広報 / M 雑談）がある。
+- 候補はここに根拠があるものを優先し、directive 末尾に `（桜井哲学：<カテゴリ>）` を付ける。
+
 ## 実行フロー
-1. 学びの候補を 1行 JSON (`{"id": "...", "trigger": [...], "directive": "...", "scope": "...", "status": "active"}`) として生成。
+1. 学びの候補を（`references/` の該当カテゴリを確認のうえ） 1行 JSON (`{"id": "...", "trigger": [...], "directive": "...", "scope": "...", "status": "active"}`) として生成。
 2. ユーザーへワンクリック確認（`y` で承認）。
-3. `.claude/rules.jsonl` に追記し、`.claude/rule_metrics.json` に ID を初期登録。
+3. `rules.jsonl` に追記し、`rule_metrics.json` に ID を初期登録。
